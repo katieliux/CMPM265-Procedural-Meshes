@@ -105,7 +105,7 @@ public class CubeMaker : MonoBehaviour
     MeshCreator mc = new MeshCreator();
     float resize = 1.0f;
     float distance = 1.2f;
-    public ParticleSystem system;
+    public Transform particlesystem;
 
 
 
@@ -114,11 +114,13 @@ public class CubeMaker : MonoBehaviour
     {
         float[] spectrum = new float[256];
         AudioListener.GetSpectrumData(spectrum, 0, FFTWindow.Rectangular);
-        var emitParams = new ParticleSystem.EmitParams();
-        system.GetComponent<ParticleSystem>();
 
 
         MeshFilter meshFilter = this.GetComponent<MeshFilter>();
+        Mesh mesh = this.GetComponent<MeshFilter>().mesh;
+        Vector3[] vertices = mesh.vertices;
+
+
         // one submesh for each face
         Vector3 center = new Vector3(0, 0, 0);
 
@@ -142,13 +144,11 @@ public class CubeMaker : MonoBehaviour
         }
         if(Input.GetKeyDown(KeyCode.A))
         {
-            this.GetComponent<MeshRenderer>().material.color = Color.red;
+            for (int i = 0; i < vertices.Length; i++)
+            {
+                this.GetComponent<MeshRenderer>().material.color = Color.Lerp(Color.yellow, Color.blue, vertices[i].y);
+            }
         }
-        if (Input.GetKeyDown(KeyCode.S))
-        {
-            this.GetComponent<MeshRenderer>().material.color = Color.blue;
-        }
-
 
 
         for (int j = 0; j < 20; j++)
@@ -159,9 +159,10 @@ public class CubeMaker : MonoBehaviour
                 Vector3 cubeSize = size * 0.5f;
                 //float timepass = 0;
                 float timepass = Time.deltaTime * 20f;
+                //timepass +=Time.deltaTime* 10.0f;
 
-                float noisy = cubeSize.y + Perlin.Noise(cubeSize.x + size.x * i * 0.12f * spectrum[i] * 100.0f + timepass, 0, cubeSize.z + size.z * j * 0.12f * spectrum[i] * 100.0f + timepass);
-                //float noisy = cubeSize.y + Perlin.Noise(cubeSize.x + size.x * i * 0.12f + timepass , 0, cubeSize.z + size.z * j * 0.12f + timepass);
+                float noisy = cubeSize.y + Perlin.Noise(cubeSize.x + size.x * i * 0.12f * spectrum[i] * 100.0f + timepass, 0, -cubeSize.z + size.z * j * 0.12f * spectrum[i] * 100.0f + timepass);
+                //float noisy = cubeSize.y + Perlin.Noise(cubeSize.x + size.x * i * 0.12f + timepass, 0, -cubeSize.z + size.z * j * 0.12f + timepass);
 
                 // top of the cube
                 // t0 is top left point
@@ -199,11 +200,10 @@ public class CubeMaker : MonoBehaviour
 
                 meshFilter.mesh = mc.CreateMesh();
 
-                //if (noisy > 1.5f)
-                //{
-                    //emitParams.position = new Vector3(cubeSize.x + size.x * i * distance, noisy * resize, -cubeSize.z + size.z * j * distance);
-                    //system.Emit(emitParams, 10);
-                //}
+                if (noisy > 1.1f)
+                {
+                    Instantiate(particlesystem, new Vector3(i * 2.0F, noisy * resize * 2, 0), Quaternion.identity);
+                }
 
             }
         }
